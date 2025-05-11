@@ -1,21 +1,38 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Sidebar Navigation ---
-    const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
+    const navLinks = document.querySelectorAll('.sidebar .nav-link'); // Be more specific
     const pageTitleElement = document.querySelector('.page-title');
+    const pageSubtitleElement = document.querySelector('.page-subtitle'); // New
 
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
-            e.preventDefault();
-            // Remove active class from all links
-            navLinks.forEach(l => l.classList.remove('active'));
-            // Add active class to clicked link
+            if (!this.classList.contains('logout-link')) { // Don't prevent default for logout
+                 e.preventDefault();
+            }
+           
+            // Remove active class from all links in sidebar-nav
+            document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
+             // Also handle settings and logout if they are styled similarly as active
+            document.querySelectorAll('.sidebar-footer .nav-link').forEach(l => l.classList.remove('active'));
+
+
             this.classList.add('active');
-            // Update page title
+
             const pageTitle = this.dataset.pageTitle;
             if (pageTitleElement && pageTitle) {
                 pageTitleElement.textContent = pageTitle;
             }
-            // Close sidebar on mobile if open after link click
+            // Example: Update subtitle dynamically or clear it
+            if (pageSubtitleElement) {
+                if (pageTitle === "Overview Dashboard") {
+                     pageSubtitleElement.textContent = "Welcome back, Alex! Here's what's happening.";
+                } else if (pageTitle) {
+                    pageSubtitleElement.textContent = `Detailed view of ${pageTitle.toLowerCase()}.`;
+                } else {
+                    pageSubtitleElement.textContent = ""; // Clear if no specific subtitle
+                }
+            }
+
+            // Close sidebar on mobile
             if (window.innerWidth < 992 && sidebar.classList.contains('open')) {
                 sidebar.classList.remove('open');
                 document.body.classList.remove('sidebar-open');
@@ -30,10 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (userProfileButton && userDropdown) {
         userProfileButton.addEventListener('click', function(e) {
-            e.stopPropagation(); // Prevent click from bubbling to document
+            e.stopPropagation();
             const isExpanded = userDropdown.classList.toggle('show');
             this.setAttribute('aria-expanded', isExpanded);
-            // Close notification dropdown if open
+            // Close other dropdowns
             if (notificationDropdown && notificationDropdown.classList.contains('show')) {
                 notificationDropdown.classList.remove('show');
                 notificationBell.setAttribute('aria-expanded', 'false');
@@ -50,10 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
             e.stopPropagation();
             const isExpanded = notificationDropdown.classList.toggle('show');
             this.setAttribute('aria-expanded', isExpanded);
-            // Close user dropdown if open
             if (userDropdown && userDropdown.classList.contains('show')) {
                 userDropdown.classList.remove('show');
-                userProfileButton.setAttribute('aria-expanded', 'false');
+                if(userProfileButton) userProfileButton.setAttribute('aria-expanded', 'false');
             }
         });
     }
@@ -62,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', function(e) {
         if (userDropdown && userDropdown.classList.contains('show') && !userDropdown.contains(e.target) && !userProfileButton.contains(e.target)) {
             userDropdown.classList.remove('show');
-            userProfileButton.setAttribute('aria-expanded', 'false');
+            if(userProfileButton) userProfileButton.setAttribute('aria-expanded', 'false');
         }
         if (notificationDropdown && notificationDropdown.classList.contains('show') && !notificationDropdown.contains(e.target) && !notificationBell.contains(e.target)) {
             notificationDropdown.classList.remove('show');
@@ -73,11 +89,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Mobile Sidebar Toggle ---
     const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
     const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
 
     if (mobileMenuToggle && sidebar) {
         mobileMenuToggle.addEventListener('click', function() {
             const isOpen = sidebar.classList.toggle('open');
-            document.body.classList.toggle('sidebar-open', isOpen);
+            document.body.classList.toggle('sidebar-open', isOpen); // Use body class for overlay
             this.setAttribute('aria-expanded', isOpen);
         });
     }
@@ -89,41 +106,95 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Chart.js Mockup Charts ---
+    // Enhanced Chart.js settings for a more polished look
+    const defaultChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false,
+            },
+            tooltip: {
+                backgroundColor: '#FFF',
+                titleColor: '#2C323F',
+                bodyColor: '#6C757D',
+                borderColor: '#E2E8F0',
+                borderWidth: 1,
+                padding: 10,
+                cornerRadius: 6,
+                boxPadding: 3, // ChartJS 3.x uses boxPadding
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    borderColor: '#E2E8F0', // Lighter grid lines
+                    color: 'rgba(226, 232, 240, 0.5)', // Even lighter for fill
+                },
+                ticks: {
+                    color: '#6C757D', // Softer tick color
+                    font: { size: 11 }
+                }
+            },
+            x: {
+                grid: {
+                    display: false, // Often cleaner to remove x-axis grid
+                },
+                ticks: {
+                    color: '#6C757D',
+                    font: { size: 11 }
+                }
+            }
+        }
+    };
+
     // Sales Over Time (Line Chart)
     const salesChartCtx = document.getElementById('salesChart')?.getContext('2d');
     if (salesChartCtx) {
+        const gradient = salesChartCtx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, 'rgba(108, 99, 255, 0.35)'); // --primary-accent
+        gradient.addColorStop(1, 'rgba(108, 99, 255, 0.01)');
+
         new Chart(salesChartCtx, {
             type: 'line',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
                 datasets: [{
-                    label: 'Sales ($)',
-                    data: [12000, 19000, 15000, 21000, 18000, 22000, 25000, 23000, 27000, 20000, 24000, 28000],
-                    borderColor: 'rgb(74, 144, 226)', // var(--primary-color)
-                    backgroundColor: 'rgba(74, 144, 226, 0.1)',
-                    tension: 0.3,
+                    label: 'Sales',
+                    data: [120, 190, 150, 210, 180, 220, 250, 230, 270, 200, 240, 280].map(v => v*100), // For example
+                    borderColor: '#6C63FF', // --primary-accent
+                    backgroundColor: gradient,
+                    tension: 0.4, // Smoother curve
                     fill: true,
+                    pointBackgroundColor: '#FFF',
+                    pointBorderColor: '#6C63FF',
+                    pointHoverBackgroundColor: '#6C63FF',
+                    pointHoverBorderColor: '#FFF',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    borderWidth: 2.5,
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
+                ...defaultChartOptions,
+                 scales: {
+                    ...defaultChartOptions.scales,
                     y: {
-                        beginAtZero: true,
+                        ...defaultChartOptions.scales.y,
                         ticks: {
-                            callback: function(value) { return '$' + value / 1000 + 'k'; }
+                            ...defaultChartOptions.scales.y.ticks,
+                            callback: function(value) { return '$' + (value / 1000) + 'k'; }
                         }
                     }
                 },
                 plugins: {
-                    legend: {
-                        display: false // Or true if you want to show it
-                    },
+                    ...defaultChartOptions.plugins,
                     tooltip: {
+                        ...defaultChartOptions.plugins.tooltip,
                         callbacks: {
                             label: function(context) {
-                                return context.dataset.label + ': $' + context.parsed.y.toLocaleString();
+                                return ' Revenue: $' + context.parsed.y.toLocaleString();
                             }
                         }
                     }
@@ -132,56 +203,51 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     } else {
         const salesChartContainer = document.getElementById('sales-chart-container');
-        if (salesChartContainer) salesChartContainer.innerHTML = '<p style="text-align:center; color:var(--text-secondary);">Sales chart could not be loaded.</p>';
+        if(salesChartContainer) salesChartContainer.innerHTML = '<p style="text-align:center; color:var(--text-secondary); padding: 20px;">Sales chart will appear here.</p>';
     }
 
-    // Traffic Sources (Bar Chart)
+    // Traffic Sources (Doughnut Chart) - More visual for this type of data
     const trafficChartCtx = document.getElementById('trafficChart')?.getContext('2d');
     if (trafficChartCtx) {
         new Chart(trafficChartCtx, {
-            type: 'bar', // Could also be 'pie' or 'doughnut'
+            type: 'doughnut',
             data: {
-                labels: ['Organic', 'Referral', 'Direct', 'Social'],
+                labels: ['Organic Search', 'Referral', 'Direct', 'Social Media'],
                 datasets: [{
-                    label: 'Visitors',
-                    data: [1850, 980, 1450, 620],
+                    label: 'Traffic Share',
+                    data: [45, 25, 20, 10],
                     backgroundColor: [
-                        'rgba(74, 144, 226, 0.7)',  // Primary
-                        'rgba(46, 204, 113, 0.7)',  // Success
-                        'rgba(243, 156, 18, 0.7)', // Warning
-                        'rgba(80, 227, 194, 0.7)'   // Accent
+                        '#6C63FF', // --primary-accent
+                        '#4BD4B4', // --secondary-accent
+                        '#FFC107', // --warning-color
+                        '#17A2B8'  // --info-color
                     ],
-                    borderColor: [
-                        'rgb(74, 144, 226)',
-                        'rgb(46, 204, 113)',
-                        'rgb(243, 156, 18)',
-                        'rgb(80, 227, 194)'
-                    ],
-                    borderWidth: 1
+                    borderColor: '#FFFFFF', // White borders for segments
+                    borderWidth: 3,
+                    hoverOffset: 8
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                indexAxis: 'y', // For horizontal bar chart; remove for vertical
-                scales: {
-                    x: { // Note: if indexAxis is 'y', this becomes the value axis
-                        beginAtZero: true
-                    }
-                },
+                ...defaultChartOptions,
+                cutout: '70%', // Makes it a doughnut
                 plugins: {
-                   legend: {
-                        display: false 
-                    },
-                     title: {
-                        display: false, // Title is already in card header
-                        text: 'Traffic Sources'
+                    ...defaultChartOptions.plugins,
+                    legend: { // Custom legend handling if desired, or use card's header legend
+                        display: true, // Or use the custom legend divs if you prefer
+                        position: 'bottom',
+                        labels: {
+                            color: '#6C757D',
+                            font: { size: 11 },
+                            padding: 15,
+                            boxWidth: 12,
+                            usePointStyle: true,
+                        }
                     }
                 }
             }
         });
     } else {
         const trafficChartContainer = document.getElementById('traffic-chart-container');
-        if (trafficChartContainer) trafficChartContainer.innerHTML = '<p style="text-align:center; color:var(--text-secondary);">Traffic chart could not be loaded.</p>';
+        if(trafficChartContainer) trafficChartContainer.innerHTML = '<p style="text-align:center; color:var(--text-secondary); padding: 20px;">Traffic sources chart will appear here.</p>';
     }
 });
